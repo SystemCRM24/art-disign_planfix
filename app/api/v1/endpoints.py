@@ -6,7 +6,7 @@ from app.dependencies import get_bitrix_deal_processor
 
 router = APIRouter()
 
-@router.post("/bitrix/webhook")
+@router.post("/")
 async def process_bitrix_deal_webhook(
     deal_id: int = Query(..., description="ID of the Bitrix24 deal to process."),
     processor: BitrixDealProcessor = Depends(get_bitrix_deal_processor)

@@ -9,11 +9,7 @@ app = FastAPI(
     description=settings.PROJECT_DESCRIPTION,
 )
 
-app.include_router(api_router, prefix="/api/v1")
-
-@app.get("/")
-async def root():
-    return {"message": "Welcome to Bitrix Integration Service"}
+app.include_router(api_router)
 
 if __name__ == "__main__":
     import uvicorn
