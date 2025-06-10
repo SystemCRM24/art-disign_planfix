@@ -1,0 +1,16 @@
+
+services:
+  art-desing-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: art_desing_app
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
