@@ -10,6 +10,8 @@ services:
       - .env
     networks:
       - app_network
+    ports:
+      - "9093:9093"  # Проброс порта
 
 networks:
   app_network:
