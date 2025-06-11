@@ -94,7 +94,7 @@ class BitrixDealProcessor:
                 }
                 try:
                     contact_id = await self.planfix_client.create_or_update_contact(planfix_contact_data)
-                    print(f"Planfix Contact processed: ID {planfix_contact_id}")
+                    print(f"Planfix Contact processed: ID {contact_id}")
                 except Exception as e:
                     print(f"НЕ ПОЛУЧИЛОСЬ СОЗДАТЬ КОНТАКТ- {contact_id_bitrix}: {e}")
         if company_details_bitrix:
@@ -103,7 +103,7 @@ class BitrixDealProcessor:
             company_email = company_details_bitrix.get("EMAIL")[0]["VALUE"] if company_details_bitrix.get("EMAIL") else None
             company_phone = company_details_bitrix.get("PHONE") if company_details_bitrix.get("PHONE") else None
 
-            company_requisites = await self._get_bitrix_entity_details(deal_id, self.bitrix_client.get_requisites)
+            company_requisites = await self._get_bitrix_entity_details(company_id_bitrix, self.bitrix_client.get_requisites)
             if company_requisites:
                 company_id = await self.planfix_client.get_company(company_requisites[0].get("RQ_INN"))
             else:

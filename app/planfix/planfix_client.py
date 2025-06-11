@@ -44,8 +44,9 @@ class PlanfixClient:
             ]
         }
         result = await self._call("contact/list", contact_data)
+        print(result)
         res = result.get("contacts")
-        if len(res) == 0:
+        if res is None:
             return None
         return result.get("contacts")[0].get('id')
     

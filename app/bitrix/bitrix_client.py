@@ -45,20 +45,20 @@ class BitrixClient:
 
         return ", ".join(filtered_parts)
 
-    async def get_requisites(self, deal_id: int) -> Dict[str, Any]:
+    async def get_requisites(self, company_id: int) -> Dict[str, Any]:
         result = []
         requisites = await self.b.get_all('crm.requisite.list', {
             "filter": {
-                "ENTITY_ID": str(deal_id)
-            }
-        })
-        bank = await self.b.get_all('crm.requisite.bankdetail.list', {
-            "filter": {
-                "ID": requisites[0].get("ID")
+                "ENTITY_ID": str(company_id)
             }
         })
         if requisites:
             result.append(requisites[0])
+            bank = await self.b.get_all('crm.requisite.bankdetail.list', {
+                "filter": {
+                    "ID": requisites[0].get("ID")
+                }
+            })
         if bank:
             result.append(bank[0])
         return result
