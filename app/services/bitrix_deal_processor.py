@@ -10,7 +10,7 @@ class BitrixDealProcessor:
         self.planfix_client = planfix_client
 
     async def _get_bitrix_entity_details(self, entity_id: Optional[str], get_function) -> Optional[Dict[str, Any]]:
-        if entity_id:
+        if entity_id and entity_id != "0":
             try:
                 result = await get_function(int(entity_id))
                 return result
@@ -34,7 +34,6 @@ class BitrixDealProcessor:
         return planfix_user_id
     
     def _transform_phone_data(self, data: List[Dict]):
-        print(data)
         result = []
         if not data:
             return []
@@ -45,7 +44,6 @@ class BitrixDealProcessor:
                 "type": 1
             }
             result.append(phone_entry)
-        print(result)
         return result
 
     async def process_deal(self, deal_id: int):
@@ -60,8 +58,13 @@ class BitrixDealProcessor:
         company_id_bitrix = deal.get("COMPANY_ID")
         responsible_id_bitrix = deal.get("ASSIGNED_BY_ID")
 
-        contact_details_bitrix = await self._get_bitrix_entity_details(contact_id_bitrix, self.bitrix_client.get_contact)
-        company_details_bitrix = await self._get_bitrix_entity_details(company_id_bitrix, self.bitrix_client.get_company)
+        contact_details_bitrix: Optional[Dict[str, Any]] = None
+        company_details_bitrix: Optional[Dict[str, Any]] = None
+
+        if contact_id_bitrix:
+            contact_details_bitrix = await self._get_bitrix_entity_details(contact_id_bitrix, self.bitrix_client.get_contact)
+
+        company_details_bitrix = await self._get_bitrix_entity_details(company_id_bitrix, self.bitrix_client.get_company)   
         # --- Сопоставление ответственного пользователя для Planfix ---
         if responsible_id_bitrix:
             planfix_task_responsible_id = await self._get_planfix_user_id_from_bitrix_user(
@@ -74,11 +77,16 @@ class BitrixDealProcessor:
         # --- Обработка данных для Planfix: Контакт и Компания ---
         contact_id: Optional[int] = None
         planfix_company_id: Optional[int] = None
+        contact_id: Optional[int] = None
+        company_id: Optional[int] = None
+        planfix_task_responsible_id: Optional[int] = None
 
         if contact_details_bitrix:
             contact_name = contact_details_bitrix.get('NAME', '')
             contact_lastname = contact_details_bitrix.get('LAST_NAME', '')
             contact_email = contact_details_bitrix.get("EMAIL")[0]["VALUE"] if contact_details_bitrix.get("EMAIL") else None
+            contact_details_bitrix.get("EMAIL")
+
             contact_phone = contact_details_bitrix.get("PHONE") if contact_details_bitrix.get("PHONE") else None
             contact_id = await self.planfix_client.get_contact(contact_phone)
             if contact_id is None:
