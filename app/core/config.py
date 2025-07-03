@@ -5,6 +5,7 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
+
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Bitrix24 and Planfix Integration"
     PROJECT_DESCRIPTION: str = "Service for Bitrix24 and Planfix integration"
@@ -16,6 +17,10 @@ class Settings(BaseSettings):
     PLANFIX_API_URL: str = os.getenv("PLABFIX_API_URL", "") # Стандартный URL API Planfix
     PLANFIX_AUTH_TOKEN: str = os.getenv("PLANFIX_AUTH_TOKEN", "")
 
+    USER_LOGIN_BITRIX: str = os.getenv("USER_LOGIN_BITRIX", "")
+    USER_PASSWORD_BITRIX: str = os.getenv("USER_PASSWORD_BITRIX", "")
+
     model_config = SettingsConfigDict(env_file=str(BASE_DIR / ".env"))
+
 
 settings = Settings()

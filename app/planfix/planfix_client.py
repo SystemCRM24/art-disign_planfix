@@ -6,7 +6,6 @@ class PlanfixClient:
     def __init__(self, api_url: str, auth_token: str):
         self.api_url = api_url
         self.headers = {
-            "Content-Type": "application/json",
             "Authorization": f"Bearer {auth_token}",
         }
         self.client = httpx.AsyncClient(base_url=self.api_url, headers=self.headers)
@@ -92,6 +91,35 @@ class PlanfixClient:
         # Planfix API для /contact/ ожидает contact_data в корне, а не обертку
         result = await self._call("contact/", contact_data)
         return result.get("id") # Planfix возвращает ID нового/обновленного объекта
+
+    async def upload_file(self, filename: str, file_content: bytes) -> Optional[int]:
+        """
+        Uploads a file to Planfix using POST /file/ and returns its ID.
+        """
+        url = "file/"
+        # httpx требует, чтобы файлы передавались в параметре `files`
+        # в формате {'имя_поля_формы': ('имя_файла', бинарное_содержимое, 'content_type')}
+        files_to_upload = {
+            "file": (filename, file_content, 'application/octet-stream')
+        }
+
+        try:
+            # Делаем прямой запрос, НЕ ИСПОЛЬЗУЯ self._call
+            response = await self.client.post(url, files=files_to_upload, timeout=60.0)
+            response.raise_for_status()
+            result = response.json()
+            file_id = result.get("id")
+            if file_id:
+                print(f"Файл '{filename}' успешно загружен в Planfix. ID: {file_id}")
+                return file_id
+            print(f"Ошибка при загрузке файла в Planfix: {result}")
+            return None
+        except httpx.HTTPStatusError as e:
+            print(f"HTTP ошибка при загрузке файла в Planfix: {e.response.status_code} - {e.response.text}")
+            raise
+        except Exception as e:
+            print(f"Неожиданная ошибка при загрузке файла в Planfix: {e}")
+            raise
 
     async def create_task(self, task_data: Dict[str, Any]) -> Optional[int]:
         """

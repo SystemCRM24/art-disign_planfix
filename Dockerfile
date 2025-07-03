@@ -18,4 +18,4 @@ FROM python:3.13-slim-bookworm
 COPY --from=builder --chown=art-design:art-design /art-design /art-design
 ENV PATH="/art-design/.venv/bin:$PATH"
 WORKDIR /art-design
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "9093"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "9093", "--reload"]

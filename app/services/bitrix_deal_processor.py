@@ -4,6 +4,13 @@ from app.bitrix.bitrix_client import BitrixClient
 from app.planfix.planfix_client import PlanfixClient
 
 
+BITRIX_TO_PLANFIX_FIELD_MAP = {
+    "UF_CRM_1741696651": 114386, # Поле "КП"
+    "UF_CRM_1741696673": 114034, # Поле "Договор"
+    "UF_CRM_1741696692": 114388, # Поле "Логотип для нанесения"
+}
+
+
 class BitrixDealProcessor:
     def __init__(self, bitrix_client: BitrixClient, planfix_client: PlanfixClient):
         self.bitrix_client = bitrix_client
@@ -58,8 +65,30 @@ class BitrixDealProcessor:
         company_id_bitrix = deal.get("COMPANY_ID")
         responsible_id_bitrix = deal.get("ASSIGNED_BY_ID")
 
+
         contact_details_bitrix: Optional[Dict[str, Any]] = None
         company_details_bitrix: Optional[Dict[str, Any]] = None
+
+        files_with_context = await self.bitrix_client.download_files_from_deal(deal)
+        
+        # 2. Загружаем файлы в Planfix и создаем карту соответствия
+        # { 'UF_CRM_1741696651': [12345], 'UF_CRM_1741696673': [12346, 12347], ... }
+        planfix_files_map = {}
+        if files_with_context:
+            for file_data in files_with_context:
+                try:
+                    file_id = await self.planfix_client.upload_file(
+                        filename=file_data['filename'],
+                        file_content=file_data['content']
+                    )
+                    if file_id:
+                        source_field = file_data['source_field']
+                        # Если для этого поля еще нет списка ID, создаем его
+                        if source_field not in planfix_files_map:
+                            planfix_files_map[source_field] = []
+                        planfix_files_map[source_field].append(file_id)
+                except Exception as e:
+                    print(f"Не удалось загрузить файл '{file_data['filename']}' в Planfix: {e}")
 
         if contact_id_bitrix:
             contact_details_bitrix = await self._get_bitrix_entity_details(contact_id_bitrix, self.bitrix_client.get_contact)
@@ -182,7 +211,18 @@ class BitrixDealProcessor:
             if company_details_bitrix.get("ADDRESS"):
                 task_description_planfix += f"Адрес компании: {company_details_bitrix['ADDRESS']}\n"
 
-        # 2. Создать задачу "Подготовить и отправить клиенту договор и счёт" в Planfix
+        custom_field_payload = []
+        for bitrix_field, planfix_field_id in BITRIX_TO_PLANFIX_FIELD_MAP.items():
+            if bitrix_field in planfix_files_map:
+                planfix_file_ids = planfix_files_map[bitrix_field]
+                custom_field_payload.append({
+                    "field": {"id": planfix_field_id},
+                    "value": planfix_file_ids # Planfix ожидает список ID
+                })
+        custom_field_payload.append({
+            "field": {"id": 115204},
+            "value": str(deal.get("OPPORTUNITY"))
+        })
         planfix_main_task_data = {
             "name": "Подготовить и отправить клиенту договор и счёт.",
             "description": task_description_planfix,
@@ -195,7 +235,11 @@ class BitrixDealProcessor:
             },
             "counterparty": {
                 "id": company_id
-            }
+            },
+            "template": {
+                "id": 203
+            },
+            "customFieldData": custom_field_payload
 
         }
 
@@ -223,7 +267,18 @@ class BitrixDealProcessor:
                 },
                 "parent": {
                     "id": planfix_main_task_id
-                }
+                },
+                "template": {
+                    "id": 88
+                },
+                "customFieldData": [
+                    {
+                        "field": {
+                            "id": 114502
+                        },
+                        "value": "дизайн-макет"
+                    }
+                ]
             }
             try:
                 planfix_sub_task_id = await self.planfix_client.create_task(planfix_sub_task_data)
