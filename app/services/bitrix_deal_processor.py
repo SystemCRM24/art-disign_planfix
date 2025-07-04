@@ -4,9 +4,12 @@ from app.bitrix.bitrix_client import BitrixClient
 from app.planfix.planfix_client import PlanfixClient
 
 
+BITRIX_CONTRACT_FIELD = "UF_CRM_1741696673"
+PLANFIX_CONTRACT_FIELD_ID = 114406
+
 BITRIX_TO_PLANFIX_FIELD_MAP = {
     "UF_CRM_1741696651": 114386, # Поле "КП"
-    "UF_CRM_1741696673": 114034, # Поле "Договор"
+    "UF_CRM_1741696673": 114406, # Поле "Договор"
     "UF_CRM_1741696692": 114388, # Поле "Логотип для нанесения"
 }
 
@@ -95,20 +98,19 @@ class BitrixDealProcessor:
 
         company_details_bitrix = await self._get_bitrix_entity_details(company_id_bitrix, self.bitrix_client.get_company)   
         # --- Сопоставление ответственного пользователя для Planfix ---
-        if responsible_id_bitrix:
-            planfix_task_responsible_id = await self._get_planfix_user_id_from_bitrix_user(
-                responsible_id_bitrix
-            )
-        else:
-            print(f"Bitrix deal {deal_id} has no ASSIGNED_BY_ID. Using default Planfix ID {planfix_task_responsible_id}.")
-
-
         # --- Обработка данных для Planfix: Контакт и Компания ---
         contact_id: Optional[int] = None
         planfix_company_id: Optional[int] = None
         contact_id: Optional[int] = None
         company_id: Optional[int] = None
         planfix_task_responsible_id: Optional[int] = None
+
+        if responsible_id_bitrix:
+            planfix_task_responsible_id = await self._get_planfix_user_id_from_bitrix_user(
+                responsible_id_bitrix
+            )
+        else:
+            print(f"Bitrix deal {deal_id} has no ASSIGNED_BY_ID. Using default Planfix ID {planfix_task_responsible_id}.")
 
         if contact_details_bitrix:
             contact_name = contact_details_bitrix.get('NAME', '')
@@ -219,17 +221,15 @@ class BitrixDealProcessor:
                     "field": {"id": planfix_field_id},
                     "value": planfix_file_ids # Planfix ожидает список ID
                 })
-        custom_field_payload.append({
-            "field": {"id": 115204},
-            "value": str(deal.get("OPPORTUNITY"))
-        })
+
+        print(planfix_task_responsible_id)
         planfix_main_task_data = {
             "name": "Подготовить и отправить клиенту договор и счёт.",
             "description": task_description_planfix,
             "assignees": {
                 "users": [
                     {
-                        "id": f"user:{planfix_task_responsible_id}"
+                        "id": f"user:{str(planfix_task_responsible_id)}"
                     }
                 ]
             },
@@ -250,6 +250,22 @@ class BitrixDealProcessor:
         except Exception as e:
             print(f"Failed to create Planfix Main Task for Bitrix Deal ID {deal_id}: {e}")
 
+        custom_field_data_for_contract = [
+            {
+                "field": {"id": 114502},
+                "value": "дизайн-макет"
+            }
+        ]
+
+        if BITRIX_CONTRACT_FIELD in planfix_files_map:
+            # Если есть, получаем его ID
+            contract_file_ids = planfix_files_map[BITRIX_CONTRACT_FIELD]
+            
+            # И добавляем в наш второй список
+            custom_field_data_for_contract.append({
+                "field": {"id": PLANFIX_CONTRACT_FIELD_ID},
+                "value": contract_file_ids # Planfix ожидает список ID
+            })
         # 3. Создать подзадачу "Подготовить дизайн" в Planfix
         if planfix_main_task_id:
             planfix_sub_task_data = {
@@ -271,14 +287,7 @@ class BitrixDealProcessor:
                 "template": {
                     "id": 88
                 },
-                "customFieldData": [
-                    {
-                        "field": {
-                            "id": 114502
-                        },
-                        "value": "дизайн-макет"
-                    }
-                ]
+                "customFieldData": custom_field_data_for_contract
             }
             try:
                 planfix_sub_task_id = await self.planfix_client.create_task(planfix_sub_task_data)
