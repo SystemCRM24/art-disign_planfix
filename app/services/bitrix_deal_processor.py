@@ -115,7 +115,7 @@ class BitrixDealProcessor:
             contact_name = contact_details_bitrix.get('NAME', '')
             contact_lastname = contact_details_bitrix.get('LAST_NAME', '')
             contact_email = contact_details_bitrix.get("EMAIL", '')
-            if contact_email is not None:
+            if contact_email:
                 contact_email = contact_email[0]["VALUE"]
 
             contact_phone = contact_details_bitrix.get("PHONE") if contact_details_bitrix.get("PHONE") else None
