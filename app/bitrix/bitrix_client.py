@@ -130,11 +130,10 @@ class BitrixClient:
 
     async def get_requisites(self, company_id: int) -> Dict[str, Any]:
         result = []
-        requisites = await self.b.get_all('crm.requisite.list', {
-            "filter": {
-                "ENTITY_ID": str(company_id)
-            }
-        })
+        requisites = await self.b.get_all(
+            'crm.requisite.list', 
+            {"filter": {"ENTITY_ID": str(company_id)}})
+        bank = None
         if requisites:
             result.append(requisites[0])
             bank = await self.b.get_all('crm.requisite.bankdetail.list', {
