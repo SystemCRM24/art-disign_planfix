@@ -46,8 +46,7 @@ class BitrixDealProcessor:
     def _transform_phone_data(self, data: List[Dict]):
         result = []
         if not data:
-            return []
-        
+            return result
         for item in data:
             phone_entry = {
                 "number": item.get("VALUE"),
@@ -115,8 +114,9 @@ class BitrixDealProcessor:
         if contact_details_bitrix:
             contact_name = contact_details_bitrix.get('NAME', '')
             contact_lastname = contact_details_bitrix.get('LAST_NAME', '')
-            contact_email = contact_details_bitrix.get("EMAIL")[0]["VALUE"] if contact_details_bitrix.get("EMAIL") else None
-            contact_details_bitrix.get("EMAIL")
+            contact_email = contact_details_bitrix.get("EMAIL", '')
+            if contact_email is not None:
+                contact_email = contact_email[0]["VALUE"]
 
             contact_phone = contact_details_bitrix.get("PHONE") if contact_details_bitrix.get("PHONE") else None
             contact_id = await self.planfix_client.get_contact(contact_phone)
@@ -128,7 +128,7 @@ class BitrixDealProcessor:
                     "name": str(contact_name),
                     "lastname": str(contact_lastname),
                     "isCompany": "false",
-                    "email": str(contact_email),
+                    "email": str(contact_email) if contact_email else "",
                     "phones": self._transform_phone_data(contact_phone)
                 }
                 try:
