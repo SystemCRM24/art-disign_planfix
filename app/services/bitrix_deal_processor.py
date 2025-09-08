@@ -271,13 +271,8 @@ class BitrixDealProcessor:
             planfix_sub_task_data = {
                 "name": "Подготовить дизайн.",
                 "description": task_description_planfix,
-                "assignees": {
-                    "users": [
-                        {
-                            "id": f"user:{planfix_task_responsible_id}"
-                        }
-                    ]
-                },
+                # Ранее тут было "assignees": {"users": [{"id": f"user:{planfix_task_responsible_id}}]}
+                "assignees": {"users": [{"id": f"user:42"}]},
                 "counterparty": {
                     "id": company_id
                 },
