@@ -226,6 +226,7 @@ class BitrixDealProcessor:
         planfix_main_task_data = {
             "name": "Подготовить и отправить клиенту договор и счёт.",
             "description": task_description_planfix,
+            "assigner": {"id": f"user:{planfix_task_responsible_id}"},
             "assignees": {
                 "users": [
                     {
@@ -240,7 +241,6 @@ class BitrixDealProcessor:
                 "id": 203
             },
             "customFieldData": custom_field_payload
-
         }
 
         planfix_main_task_id: Optional[int] = None
@@ -272,6 +272,7 @@ class BitrixDealProcessor:
                 "name": "Подготовить дизайн.",
                 "description": task_description_planfix,
                 # Ранее тут было "assignees": {"users": [{"id": f"user:{planfix_task_responsible_id}}]}
+                "assigner": {"id": f"user:{planfix_task_responsible_id}"},
                 "assignees": {"users": [{"id": f"user:42"}]},
                 "counterparty": {
                     "id": company_id
