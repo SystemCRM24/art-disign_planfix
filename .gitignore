@@ -9,3 +9,6 @@ wheels/
 # Virtual environments
 .venv
 .env
+
+art_design_dk
+art_design_dk.pub
